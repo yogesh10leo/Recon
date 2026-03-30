@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATM Reconciliation System - Project Task Dashboard</title>
+<style>
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --surface2: #334155; --border: #475569;
+    --text: #e2e8f0; --text-muted: #94a3b8; --accent: #3b82f6; --accent2: #8b5cf6;
+    --green: #22c55e; --yellow: #eab308; --red: #ef4444; --orange: #f97316; --cyan: #06b6d4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+  .header { text-align: center; padding: 30px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .header h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .header p { color: var(--text-muted); font-size: 14px; }
+
+  .disclaimer {
+    background: linear-gradient(135deg, rgba(234,179,8,0.1), rgba(249,115,22,0.08));
+    border: 1px solid rgba(234,179,8,0.3); border-radius: 10px; padding: 16px 20px;
+    margin-bottom: 24px; font-size: 13px; color: var(--yellow);
+  }
+  .disclaimer strong { color: #fbbf24; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px; text-align: center;
+  }
+  .stat-card .num { font-size: 32px; font-weight: 800; }
+  .stat-card .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab {
+    padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-muted); cursor: pointer; font-size: 13px;
+    transition: all 0.2s;
+  }
+  .tab:hover { border-color: var(--accent); color: var(--text); }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .epic-section { margin-bottom: 16px; }
+  .epic-header {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px 10px 0 0;
+    padding: 14px 18px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+    transition: background 0.2s;
+  }
+  .epic-header:hover { background: var(--surface2); }
+  .epic-header h3 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .epic-header .meta { display: flex; gap: 14px; font-size: 12px; color: var(--text-muted); }
+  .epic-header .meta span { display: flex; align-items: center; gap: 4px; }
+  .epic-body {
+    border: 1px solid var(--border); border-top: none; border-radius: 0 0 10px 10px;
+    overflow: hidden; max-height: 0; transition: max-height 0.3s ease;
+  }
+  .epic-body.open { max-height: 5000px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--surface2); padding: 10px 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(71,85,105,0.4); }
+  tr:hover td { background: rgba(59,130,246,0.05); }
+
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  }
+  .badge-highest { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge-high { background: rgba(249,115,22,0.15); color: var(--orange); }
+  .badge-medium { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .badge-low { background: rgba(34,197,94,0.15); color: var(--green); }
+
+  .cat-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  }
+  .cat-rd { background: rgba(139,92,246,0.15); color: var(--accent2); }
+  .cat-db { background: rgba(6,182,212,0.15); color: var(--cyan); }
+  .cat-be { background: rgba(59,130,246,0.15); color: var(--accent); }
+  .cat-fe { background: rgba(34,197,94,0.15); color: var(--green); }
+  .cat-qa { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .cat-sec { background: rgba(239,68,68,0.15); color: var(--red); }
+  .cat-infra { background: rgba(249,115,22,0.15); color: var(--orange); }
+  .cat-uat { background: rgba(6,182,212,0.15); color: var(--cyan); }
+
+  .phase-tag { font-size: 11px; color: var(--accent); font-weight: 600; }
+  .arrow { transition: transform 0.2s; font-size: 14px; }
+  .arrow.open { transform: rotate(90deg); }
+
+  .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .team-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px;
+  }
+  .team-card h4 { font-size: 15px; margin-bottom: 4px; }
+  .team-card .role { font-size: 12px; color: var(--accent); margin-bottom: 10px; }
+  .team-card .hours { font-size: 24px; font-weight: 700; color: var(--green); }
+  .team-card .hours-label { font-size: 11px; color: var(--text-muted); }
+  .team-card .task-list { font-size: 12px; color: var(--text-muted); margin-top: 10px; line-height: 1.8; }
+
+  .timeline { margin: 20px 0; overflow-x: auto; }
+  .timeline-row { display: flex; align-items: center; margin-bottom: 6px; min-width: 900px; }
+  .timeline-label { width: 200px; min-width: 200px; font-size: 12px; font-weight: 500; padding-right: 10px; text-align: right; }
+  .timeline-bar-container { flex: 1; position: relative; height: 28px; }
+  .timeline-bar {
+    position: absolute; height: 22px; border-radius: 4px; top: 3px;
+    display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #fff;
+  }
+  .timeline-weeks { display: flex; margin-left: 200px; margin-bottom: 8px; min-width: 700px; }
+  .timeline-week { flex: 1; text-align: center; font-size: 10px; color: var(--text-muted); border-left: 1px solid rgba(71,85,105,0.3); padding: 4px 0; }
+
+  .search-box {
+    width: 100%; padding: 10px 16px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 14px; margin-bottom: 16px; outline: none;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--text-muted); }
+
+  .filter-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-row select {
+    padding: 8px 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 13px; outline: none;
+  }
+
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .team-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>ATM Reconciliation System</h1>
+    <p>Project Task Breakdown &amp; Resource Plan | Tech Stack: ASP.NET Core MVC + Web API + SQL Server (ERPWeb/ERPApi Architecture)</p>
+  </div>
+
+  <div class="disclaimer">
+    <strong>&#9888; Important Note:</strong> All timelines, estimates, and resource allocations are preliminary and prepared from our side based on the initial proposal requirements. These may <strong>increase or decrease</strong> based on detailed discussions with the client, scope changes, data complexity, integration challenges, and feedback received during the project lifecycle. Final estimates will be confirmed after requirement finalization with the client.
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="num" style="color:var(--accent)">18</div><div class="label">Epics</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--green)">108</div><div class="label">Stories / Tasks</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--yellow)">~1,640</div><div class="label">Person-Hours</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--orange)">16-18</div><div class="label">Weeks Est.</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--accent2)">6</div><div class="label">Team Members</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--cyan)">8</div><div class="label">Phases</div></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('tasks')">All Tasks</div>
+    <div class="tab" onclick="switchTab('timeline')">Timeline</div>
+    <div class="tab" onclick="switchTab('team')">Team Allocation</div>
+    <div class="tab" onclick="switchTab('summary')">Phase Summary</div>
+  </div>
+
+  <!-- TASKS TAB -->
+  <div id="tab-tasks" class="tab-content active">
+    <input type="text" class="search-box" id="searchBox" placeholder="Search tasks by ID, name, assignee, category..." oninput="filterTasks()">
+    <div class="filter-row">
+      <select id="filterCategory" onchange="filterTasks()">
+        <option value="">All Categories</option>
+        <option value="R&D">R&D</option>
+        <option value="Database">Database</option>
+        <option value="Backend">Backend</option>
+        <option value="Frontend">Frontend</option>
+        <option value="Security">Security</option>
+        <option value="QA">QA</option>
+        <option value="Testing">Testing</option>
+        <option value="Infrastructure">Infrastructure</option>
+        <option value="UAT">UAT</option>
+        <option value="DevOps">DevOps</option>
+        <option value="Documentation">Documentation</option>
+      </select>
+      <select id="filterAssignee" onchange="filterTasks()">
+        <option value="">All Assignees</option>
+        <option value="Team Lead">Team Lead</option>
+        <option value="Senior Developer">Senior Developer</option>
+        <option value="Frontend Developer">Frontend Developer</option>
+        <option value="Backend Developer">Backend Developer</option>
+        <option value="Senior QA">Senior QA</option>
+        <option value="Consultant">Consultant</option>
+      </select>
+      <select id="filterPriority" onchange="filterTasks()">
+        <option value="">All Priorities</option>
+        <option value="Highest">Highest</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+      </select>
+    </div>
+
+    <div id="epicsContainer"></div>
+  </div>
+
+  <!-- TIMELINE TAB -->
+  <div id="tab-timeline" class="tab-content">
+    <h2 style="font-size:18px;margin-bottom:16px;">Project Timeline (Gantt Overview)</h2>
+    <div class="disclaimer" style="font-size:12px;padding:12px;">Timeline is approximate. Weeks are working weeks from project start. Actual dates depend on project kickoff and client coordination.</div>
+    <div class="timeline" id="timelineChart"></div>
+  </div>
+
+  <!-- TEAM TAB -->
+  <div id="tab-team" class="tab-content">
+    <h2 style="font-size:18px;margin-bottom:16px;">Team Resource Allocation</h2>
+    <div class="team-grid" id="teamGrid"></div>
+  </div>
+
+  <!-- SUMMARY TAB -->
+  <div id="tab-summary" class="tab-content">
+    <h2 style="font-size:18px;margin-bottom:16px;">Phase-wise Summary</h2>
+    <div id="phaseSummary"></div>
+  </div>
+</div>
+
+<script>
+const EPICS = [
+  {
+    id: "EP-01", name: "R&D and Requirement Analysis", phase: "Phase-0", weeks: "Week 1-2", hours: 108,
+    tasks: [
+      { id: "RD-01", name: "Study existing CBS system and data formats", desc: "Study CBS transaction data structure, available APIs/data export formats, field mappings, and integration points", cat: "R&D", assignee: "Consultant", priority: "Highest", hours: 16, week: "Week 1" },
+      { id: "RD-02", name: "Study existing EJ system and data formats", desc: "Analyze EJ data structure, log formats, storage mechanism, extraction methods", cat: "R&D", assignee: "Consultant", priority: "Highest", hours: 16, week: "Week 1" },
+      { id: "RD-03", name: "Study NEPS system and switch transaction data", desc: "Analyze NEPS transaction data, settlement files, response codes, integration protocols", cat: "R&D", assignee: "Consultant", priority: "Highest", hours: 16, week: "Week 1-2" },
+      { id: "RD-04", name: "Define reconciliation business rules with client", desc: "Workshop with bank stakeholders to finalize matching rules, tolerance thresholds, exception handling, GL posting rules", cat: "R&D", assignee: "Team Lead", priority: "Highest", hours: 16, week: "Week 1-2" },
+      { id: "RD-05", name: "Architecture design document preparation", desc: "Detailed system architecture: component design, data flow, integration architecture, deployment topology", cat: "R&D", assignee: "Team Lead", priority: "High", hours: 16, week: "Week 2" },
+      { id: "RD-06", name: "Response code mapping and categorization", desc: "Map all ATM response codes from CBS/EJ/NEPS, categorize them, define reconciliation behavior", cat: "R&D", assignee: "Consultant", priority: "High", hours: 12, week: "Week 2" },
+      { id: "RD-07", name: "Define data synchronization strategy", desc: "Design sync approach: file-based vs API-based, scheduling, error handling, retry logic", cat: "R&D", assignee: "Senior Developer", priority: "High", hours: 8, week: "Week 2" },
+      { id: "RD-08", name: "Define reporting requirements with stakeholders", desc: "Gather detailed reporting requirements: types, filters, formats, scheduling, KPIs", cat: "R&D", assignee: "Consultant", priority: "Medium", hours: 8, week: "Week 2" }
+    ]
+  },
+  {
+    id: "EP-02", name: "Project Infrastructure & Setup", phase: "Phase-1", weeks: "Week 2-3", hours: 58,
+    tasks: [
+      { id: "INF-01", name: "Create backend solution structure (ERPApi pattern)", desc: "ASP.NET Core Web API: API, Application, Domain, Infrastructure layers", cat: "Infrastructure", assignee: "Team Lead", priority: "Highest", hours: 8, week: "Week 2" },
+      { id: "INF-02", name: "Create frontend solution structure (ERPWeb pattern)", desc: "ASP.NET Core MVC: Areas-based organization, Razor views, wwwroot structure", cat: "Infrastructure", assignee: "Team Lead", priority: "Highest", hours: 8, week: "Week 2" },
+      { id: "INF-03", name: "Setup Git repositories and branching strategy", desc: "Initialize repos, branching strategy (main/develop/feature/release), .gitignore, branch protection", cat: "Infrastructure", assignee: "Team Lead", priority: "Highest", hours: 4, week: "Week 2" },
+      { id: "INF-04", name: "Configure CI/CD pipeline for backend API", desc: "GitHub Actions: build, test, publish, deploy to IIS via Web Deploy", cat: "DevOps", assignee: "Team Lead", priority: "High", hours: 8, week: "Week 3" },
+      { id: "INF-05", name: "Configure CI/CD pipeline for frontend web", desc: "GitHub Actions: npm ci, build, dotnet publish, deploy to IIS", cat: "DevOps", assignee: "Team Lead", priority: "High", hours: 8, week: "Week 3" },
+      { id: "INF-06", name: "Setup development environment documentation", desc: "Document setup: tools, SDK versions, SQL Server, IIS config, local dev guide", cat: "Documentation", assignee: "Team Lead", priority: "Medium", hours: 4, week: "Week 3" },
+      { id: "INF-07", name: "Configure NuGet packages and dependencies", desc: "MediatR, FluentValidation, AutoMapper, EF Core, Dapper, Hangfire, Serilog, Swashbuckle", cat: "Backend", assignee: "Senior Developer", priority: "High", hours: 4, week: "Week 2" },
+      { id: "INF-08", name: "Configure frontend packages and webpack", desc: "package.json, webpack.config.js, Bootstrap, jQuery, Alpine.js setup", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 6, week: "Week 2" },
+      { id: "INF-09", name: "Setup Swagger/OpenAPI documentation", desc: "Swashbuckle with JWT Bearer, API versioning, XML docs", cat: "Backend", assignee: "Backend Developer", priority: "Medium", hours: 4, week: "Week 3" },
+      { id: "INF-10", name: "Setup logging infrastructure", desc: "Serilog, request logging middleware, exception middleware", cat: "Backend", assignee: "Backend Developer", priority: "Medium", hours: 4, week: "Week 3" }
+    ]
+  },
+  {
+    id: "EP-03", name: "Database Design & Implementation", phase: "Phase-1", weeks: "Week 2-4", hours: 132,
+    tasks: [
+      { id: "DB-01", name: "Design master tables schema", desc: "ATM_Terminals, Banks, Branches, ResponseCodes, TransactionTypes, ReconciliationStatus", cat: "Database", assignee: "Senior Developer", priority: "Highest", hours: 16, week: "Week 2-3" },
+      { id: "DB-02", name: "Design transaction tables schema", desc: "CBS_Transactions, EJ_Transactions, NEPS_Transactions with indexes and partitioning", cat: "Database", assignee: "Senior Developer", priority: "Highest", hours: 16, week: "Week 2-3" },
+      { id: "DB-03", name: "Design reconciliation tables schema", desc: "Reconciliation_Batches, Results, Exceptions, Matched_Transactions", cat: "Database", assignee: "Senior Developer", priority: "Highest", hours: 12, week: "Week 3" },
+      { id: "DB-04", name: "Design dispute management tables", desc: "Disputes, Dispute_History, Approvals, Documents with workflow states", cat: "Database", assignee: "Senior Developer", priority: "High", hours: 8, week: "Week 3" },
+      { id: "DB-05", name: "Design user and role management tables", desc: "ASP.NET Identity tables with custom extensions", cat: "Database", assignee: "Backend Developer", priority: "High", hours: 8, week: "Week 2" },
+      { id: "DB-06", name: "Design audit and logging tables", desc: "AuditLogs, SystemLogs, LoginHistory, DataChangeHistory", cat: "Database", assignee: "Backend Developer", priority: "High", hours: 6, week: "Week 3" },
+      { id: "DB-07", name: "Design menu management tables", desc: "Menus, MenuItems, RoleMenus with hierarchical structure", cat: "Database", assignee: "Backend Developer", priority: "Medium", hours: 4, week: "Week 3" },
+      { id: "DB-08", name: "Design refill management tables", desc: "ATM_Refills, Refill_Transactions with Last/First Trace columns", cat: "Database", assignee: "Senior Developer", priority: "High", hours: 6, week: "Week 3" },
+      { id: "DB-09", name: "Design data sync and scheduling tables", desc: "SyncSchedules, SyncLogs, SyncErrors, DataImportBatches", cat: "Database", assignee: "Backend Developer", priority: "High", hours: 6, week: "Week 3" },
+      { id: "DB-10", name: "Design reporting and dashboard tables", desc: "DailyReconciliationSummary, TerminalWiseSummary, GLDifferences", cat: "Database", assignee: "Senior Developer", priority: "Medium", hours: 8, week: "Week 3-4" },
+      { id: "DB-11", name: "Create stored procedures for reconciliation", desc: "sp_MatchTransactions, sp_GenerateReconciliationBatch, sp_GetUnmatched optimized for volume", cat: "Database", assignee: "Senior Developer", priority: "Highest", hours: 16, week: "Week 3-4" },
+      { id: "DB-12", name: "Create stored procedures for reporting", desc: "sp_DailyReconciliation, sp_TerminalWise, sp_GLDifference, sp_Dispute, sp_Refill", cat: "Database", assignee: "Senior Developer", priority: "High", hours: 12, week: "Week 4" },
+      { id: "DB-13", name: "Create seed data scripts", desc: "ResponseCodes, TransactionTypes, roles, admin user, sample terminals, menus", cat: "Database", assignee: "Backend Developer", priority: "Medium", hours: 6, week: "Week 4" },
+      { id: "DB-14", name: "Setup EF Core migrations and DbContext", desc: "AccountDbContext entity configs, initial migration, Dapper repository setup", cat: "Database", assignee: "Senior Developer", priority: "High", hours: 8, week: "Week 3" },
+      { id: "DB-15", name: "Design data archival schema and procedures", desc: "Archive tables, sp_ArchiveOldEJData (3-month), sp_ArchiveReconciliation", cat: "Database", assignee: "Backend Developer", priority: "Medium", hours: 8, week: "Week 4" }
+    ]
+  },
+  {
+    id: "EP-04", name: "Authentication & Role-Based Access Control", phase: "Phase-2", weeks: "Week 3-5", hours: 104,
+    tasks: [
+      { id: "AUTH-01", name: "Implement JWT authentication for API", desc: "Token generation, validation, refresh token, symmetric key config", cat: "Security", assignee: "Senior Developer", priority: "Highest", hours: 12, week: "Week 3" },
+      { id: "AUTH-02", name: "Implement Cookie authentication for Web", desc: "Login/logout flow, session management, access denied handling", cat: "Security", assignee: "Senior Developer", priority: "Highest", hours: 8, week: "Week 3" },
+      { id: "AUTH-03", name: "Create User Management API endpoints", desc: "CRUD: CreateUser, UpdateUser, DeleteUser, GetUsers, ChangePassword via MediatR", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 16, week: "Week 3-4" },
+      { id: "AUTH-04", name: "Create Role Management API endpoints", desc: "CRUD: CreateRole, UpdateRole, DeleteRole, GetRoles, AssignPermissions via MediatR", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 12, week: "Week 4" },
+      { id: "AUTH-05", name: "Implement permission system at action level", desc: "EFeature enum, UserPermissionManager, authorization filters", cat: "Security", assignee: "Senior Developer", priority: "High", hours: 12, week: "Week 4" },
+      { id: "AUTH-06", name: "Build User Management UI pages", desc: "User List with search/filter/pagination, Create/Edit User forms, User Detail", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 16, week: "Week 4-5" },
+      { id: "AUTH-07", name: "Build Role Management UI pages", desc: "Role List, Create/Edit Role, Permission matrix, Role-User assignment", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 12, week: "Week 4-5" },
+      { id: "AUTH-08", name: "Build Login and Authentication UI", desc: "Login page, Forgot Password, Reset Password, Session Timeout, Unauthorized", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 8, week: "Week 3" },
+      { id: "AUTH-09", name: "Implement role-based API authorization", desc: "[Authorize(Roles)] attributes, custom authorization handlers", cat: "Security", assignee: "Senior Developer", priority: "High", hours: 8, week: "Week 4" }
+    ]
+  },
+  {
+    id: "EP-05", name: "Menu Management Module", phase: "Phase-2", weeks: "Week 4-5", hours: 38,
+    tasks: [
+      { id: "MENU-01", name: "Create Menu Management API endpoints", desc: "CRUD: CreateMenu, UpdateMenu, DeleteMenu, GetMenuTree, ReorderMenus via MediatR", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 12, week: "Week 4" },
+      { id: "MENU-02", name: "Build dynamic menu rendering system", desc: "Server-side menu rendering by role, hierarchical sidebar menu component", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 12, week: "Week 5" },
+      { id: "MENU-03", name: "Build Menu Management admin UI", desc: "Menu Tree view, drag-and-drop reorder, Create/Edit form, Role-Menu Assignment", cat: "Frontend", assignee: "Frontend Developer", priority: "Medium", hours: 10, week: "Week 5" },
+      { id: "MENU-04", name: "Create menu.json configuration", desc: "Complete ATM Reconciliation menu structure in JSON", cat: "Frontend", assignee: "Frontend Developer", priority: "Medium", hours: 4, week: "Week 4" }
+    ]
+  },
+  {
+    id: "EP-06", name: "Data Synchronization Module", phase: "Phase-3", weeks: "Week 5-8", hours: 132,
+    tasks: [
+      { id: "SYNC-01", name: "Build CBS data import service", desc: "File parsing/API integration, field mapping, validation, duplicate detection, batch tracking", cat: "Backend", assignee: "Senior Developer", priority: "Highest", hours: 24, week: "Week 5-6" },
+      { id: "SYNC-02", name: "Build EJ data import service", desc: "Log file parsing, field extraction, normalization, validation, batch tracking", cat: "Backend", assignee: "Senior Developer", priority: "Highest", hours: 24, week: "Week 6-7" },
+      { id: "SYNC-03", name: "Build NEPS data import service", desc: "File parsing/API integration, field mapping, response code mapping, batch tracking", cat: "Backend", assignee: "Backend Developer", priority: "Highest", hours: 24, week: "Week 6-7" },
+      { id: "SYNC-04", name: "Configure Hangfire scheduled jobs", desc: "SQL Server storage, recurring jobs at 1AM/1PM/8PM, monitoring, failure notification", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 12, week: "Week 7" },
+      { id: "SYNC-05", name: "Implement manual sync trigger API", desc: "API for manual sync with source selection, date range, status tracking", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 8, week: "Week 7" },
+      { id: "SYNC-06", name: "Build Data Sync monitoring dashboard UI", desc: "Sync Status Dashboard, history log, manual sync trigger form", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 16, week: "Week 7-8" },
+      { id: "SYNC-07", name: "Implement sync error handling and retry logic", desc: "Retry mechanism, dead-letter handling, error notification via email/SignalR", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 12, week: "Week 8" },
+      { id: "SYNC-08", name: "Implement data validation rules engine", desc: "Configurable validation: mandatory fields, format, range, cross-field, reports", cat: "Backend", assignee: "Senior Developer", priority: "High", hours: 12, week: "Week 7" }
+    ]
+  },
+  {
+    id: "EP-07", name: "Reconciliation Engine", phase: "Phase-3", weeks: "Week 7-10", hours: 172,
+    tasks: [
+      { id: "RECON-01", name: "Build transaction matching algorithm", desc: "Match by transaction_id + amount + terminal_id + timestamp with configurable tolerance", cat: "Backend", assignee: "Senior Developer", priority: "Highest", hours: 32, week: "Week 7-9" },
+      { id: "RECON-02", name: "Build reconciliation batch processor", desc: "Batch processing: initiate, chunk processing, progress tracking, interruption handling", cat: "Backend", assignee: "Senior Developer", priority: "Highest", hours: 24, week: "Week 8-9" },
+      { id: "RECON-03", name: "Implement mismatch detection and categorization", desc: "Detect: amount mismatch, missing in CBS/EJ/NEPS, duplicates, timestamp mismatch", cat: "Backend", assignee: "Senior Developer", priority: "Highest", hours: 16, week: "Week 9" },
+      { id: "RECON-04", name: "Build auto-reconciliation rules engine", desc: "Configurable rules: exact match auto-approve, tolerance auto-approve, exception routing", cat: "Backend", assignee: "Senior Developer", priority: "High", hours: 16, week: "Week 9-10" },
+      { id: "RECON-05", name: "Create reconciliation API endpoints", desc: "APIs: Initiate, GetBatches, GetDetails, GetMatched, GetUnmatched, Approve via MediatR", cat: "Backend", assignee: "Backend Developer", priority: "Highest", hours: 16, week: "Week 9" },
+      { id: "RECON-06", name: "Build Reconciliation Dashboard UI", desc: "Dashboard with summary cards, batch timeline, quick actions", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 16, week: "Week 9-10" },
+      { id: "RECON-07", name: "Build Reconciliation Results list UI", desc: "Results list with advanced filters, sortable columns, pagination, bulk actions", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 16, week: "Week 10" },
+      { id: "RECON-08", name: "Build Transaction Detail comparison UI", desc: "Side-by-side CBS vs EJ vs NEPS comparison with highlighted differences", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 12, week: "Week 10" },
+      { id: "RECON-09", name: "Implement manual reconciliation workflow", desc: "Manual review: approve/reject, remarks, escalation, audit trail", cat: "Backend", assignee: "Senior Developer", priority: "High", hours: 12, week: "Week 10" },
+      { id: "RECON-10", name: "Build GL difference calculation logic", desc: "GL difference between CBS and switch totals, categorization, adjustment recommendations", cat: "Backend", assignee: "Senior Developer", priority: "High", hours: 12, week: "Week 10" }
+    ]
+  },
+  {
+    id: "EP-08", name: "ATM Refill Handling", phase: "Phase-4", weeks: "Week 8-10", hours: 52,
+    tasks: [
+      { id: "REFILL-01", name: "Build refill event management API", desc: "CRUD: RecordRefill, UpdateRefill, GetRefills, GetRefillByTerminal", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 12, week: "Week 8" },
+      { id: "REFILL-02", name: "Implement Last Trace / First Trace logic", desc: "Identify Last Trace (pre-refill) and First Trace (post-refill) per terminal", cat: "Backend", assignee: "Senior Developer", priority: "High", hours: 16, week: "Week 9" },
+      { id: "REFILL-03", name: "Build refill-aware reconciliation adjustments", desc: "Split reconciliation at refill points, adjust cash balance calculations", cat: "Backend", assignee: "Senior Developer", priority: "High", hours: 12, week: "Week 9-10" },
+      { id: "REFILL-04", name: "Build ATM Refill Management UI", desc: "Refill Event List, Record form, Refill History, Last/First Trace viewer", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 12, week: "Week 9-10" }
+    ]
+  },
+  {
+    id: "EP-09", name: "Dispute Management Module", phase: "Phase-4", weeks: "Week 9-11", hours: 76,
+    tasks: [
+      { id: "DISP-01", name: "Build dispute creation and tracking API", desc: "CRUD: Create, Update, Get, GetById, GetHistory with lifecycle tracking", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 16, week: "Week 9-10" },
+      { id: "DISP-02", name: "Implement dispute approval workflow", desc: "Multi-level: Officer > Supervisor > Admin with notifications", cat: "Backend", assignee: "Senior Developer", priority: "High", hours: 16, week: "Week 10" },
+      { id: "DISP-03", name: "Build manual transaction entry with validation", desc: "Manual entry form, document upload, duplicate check, audit logging", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 12, week: "Week 10" },
+      { id: "DISP-04", name: "Build Dispute Management UI - List and Filters", desc: "Dispute List with status/date/terminal filters, sortable, pagination, export", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 12, week: "Week 10-11" },
+      { id: "DISP-05", name: "Build Dispute Detail and Workflow UI", desc: "Detail page with timeline, approval actions, remarks, document viewer", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 12, week: "Week 11" },
+      { id: "DISP-06", name: "Build Create/Edit Dispute UI", desc: "New Dispute form, transaction search/link, manual entry, document upload", cat: "Frontend", assignee: "Frontend Developer", priority: "Medium", hours: 8, week: "Week 11" }
+    ]
+  },
+  {
+    id: "EP-10", name: "Response Code Handling", phase: "Phase-4", weeks: "Week 8-9", hours: 28,
+    tasks: [
+      { id: "RESP-01", name: "Build Response Code master management API", desc: "CRUD: Create, Update, Get with code-to-category mapping", cat: "Backend", assignee: "Backend Developer", priority: "Medium", hours: 8, week: "Week 8" },
+      { id: "RESP-02", name: "Implement response code processing logic", desc: "Configurable handler: map codes to reconciliation actions, handle conflicts", cat: "Backend", assignee: "Senior Developer", priority: "High", hours: 12, week: "Week 9" },
+      { id: "RESP-03", name: "Build Response Code Management UI", desc: "Response Code List, Create/Edit form with category and action mapping", cat: "Frontend", assignee: "Frontend Developer", priority: "Medium", hours: 8, week: "Week 9" }
+    ]
+  },
+  {
+    id: "EP-11", name: "Reporting & Dashboard", phase: "Phase-5", weeks: "Week 10-13", hours: 132,
+    tasks: [
+      { id: "RPT-01", name: "Build Daily Reconciliation Report API", desc: "Date-wise summary, matched/unmatched counts, amounts, with PDF/Excel export", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 12, week: "Week 10" },
+      { id: "RPT-02", name: "Build Terminal-wise Report API", desc: "Per-terminal counts, match rates, exceptions, with PDF/Excel export", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 10, week: "Week 11" },
+      { id: "RPT-03", name: "Build GL Difference Report API", desc: "CBS vs NEPS balance comparison, difference categorization with export", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 10, week: "Week 11" },
+      { id: "RPT-04", name: "Build Dispute Report API", desc: "Dispute summary by status/type/terminal, aging analysis with export", cat: "Backend", assignee: "Backend Developer", priority: "Medium", hours: 8, week: "Week 11" },
+      { id: "RPT-05", name: "Build Refill Report API", desc: "Refill history, cash utilization, Last/First Trace summary with export", cat: "Backend", assignee: "Backend Developer", priority: "Medium", hours: 8, week: "Week 12" },
+      { id: "RPT-06", name: "Build Main Dashboard UI", desc: "Executive Dashboard: KPI cards, charts, daily trends, activity feed", cat: "Frontend", assignee: "Frontend Developer", priority: "Highest", hours: 20, week: "Week 10-11" },
+      { id: "RPT-07", name: "Build Daily Reconciliation Report UI", desc: "Date picker, summary cards, transaction table, mismatch highlights, export", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 12, week: "Week 11-12" },
+      { id: "RPT-08", name: "Build Terminal-wise Report UI", desc: "Terminal selector, performance metrics, breakdown chart, export", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 10, week: "Week 12" },
+      { id: "RPT-09", name: "Build GL Difference Report UI", desc: "Date range filter, difference table with variance highlighting, export", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 10, week: "Week 12" },
+      { id: "RPT-10", name: "Build Dispute and Refill Report UI", desc: "Dispute Report with charts; Refill Report with timeline, export", cat: "Frontend", assignee: "Frontend Developer", priority: "Medium", hours: 12, week: "Week 12-13" }
+    ]
+  },
+  {
+    id: "EP-12", name: "Audit & Compliance", phase: "Phase-5", weeks: "Week 10-12", hours: 50,
+    tasks: [
+      { id: "AUD-01", name: "Implement activity logging middleware", desc: "Log all user actions: page visits, API calls, data changes with context", cat: "Backend", assignee: "Senior Developer", priority: "High", hours: 12, week: "Week 10" },
+      { id: "AUD-02", name: "Implement data change tracking", desc: "EF Core interceptor for modifications: entity, field, old/new value, who/when", cat: "Backend", assignee: "Senior Developer", priority: "High", hours: 8, week: "Week 10" },
+      { id: "AUD-03", name: "Build Audit Log API endpoints", desc: "GetAuditLogs, GetLoginHistory, GetDataChangeHistory, ExportAuditReport", cat: "Backend", assignee: "Backend Developer", priority: "High", hours: 10, week: "Week 11" },
+      { id: "AUD-04", name: "Build Audit Log viewer UI", desc: "Audit Log List with search, Log Detail, Login History, export", cat: "Frontend", assignee: "Frontend Developer", priority: "High", hours: 12, week: "Week 11-12" },
+      { id: "AUD-05", name: "Implement tamper-proof log storage", desc: "Hash chaining, separate log database, restricted deletes, verification", cat: "Backend", assignee: "Senior Developer", priority: "Medium", hours: 8, week: "Week 12" }
+    ]
+  },
+  {
+    id: "EP-13", name: "Data Backup & Retention", phase: "Phase-5", weeks: "Week 11-12", hours: 38,
+    tasks: [
+      { id: "BKP-01", name: "Implement EJ data archival service", desc: "Hangfire job to archive EJ data >3 months, maintain integrity, log archival", cat: "Backend", assignee: "Backend Developer", priority: "Medium", hours: 12, week: "Week 11" },
+      { id: "BKP-02", name: "Implement automated backup scheduling", desc: "Daily incremental, weekly full backups, verification, notification, cleanup", cat: "Backend", assignee: "Backend Developer", priority: "Medium", hours: 10, week: "Week 11-12" },
+      { id: "BKP-03", name: "Build backup monitoring UI", desc: "Backup Status dashboard, history, manual trigger, archive viewer", cat: "Frontend", assignee: "Frontend Developer", priority: "Medium", hours: 8, week: "Week 12" },
+      { id: "BKP-04", name: "Implement data retention policy engine", desc: "Configurable retention rules per data type, automated cleanup, policy audit log", cat: "Backend", assignee: "Backend Developer", priority: "Medium", hours: 8, week: "Week 12" }
+    ]
+  },
+  {
+    id: "EP-14", name: "Security Hardening", phase: "Phase-6", weeks: "Week 12-14", hours: 60,
+    tasks: [
+      { id: "SEC-01", name: "Implement data encryption at rest", desc: "SQL Server TDE, application-level AES-256 for sensitive fields", cat: "Security", assignee: "Senior Developer", priority: "Highest", hours: 12, week: "Week 12" },
+      { id: "SEC-02", name: "Implement data encryption in transit", desc: "HTTPS/TLS, certificate management, HSTS, disable weak ciphers", cat: "Security", assignee: "Team Lead", priority: "Highest", hours: 8, week: "Week 12" },
+      { id: "SEC-03", name: "Implement session management policies", desc: "Session timeout, concurrent limits, fixation prevention, secure cookies", cat: "Security", assignee: "Senior Developer", priority: "High", hours: 8, week: "Week 13" },
+      { id: "SEC-04", name: "Implement password policies", desc: "Complexity rules, password history, lockout policy, expiry notification", cat: "Security", assignee: "Backend Developer", priority: "High", hours: 6, week: "Week 13" },
+      { id: "SEC-05", name: "Implement input validation and sanitization", desc: "FluentValidation rules, anti-XSS, parameterized queries, CSRF tokens", cat: "Security", assignee: "Senior Developer", priority: "High", hours: 10, week: "Week 13" },
+      { id: "SEC-06", name: "Implement rate limiting and DDoS protection", desc: "Per-endpoint rate limiting, IP throttling, CAPTCHA for failed logins", cat: "Security", assignee: "Backend Developer", priority: "Medium", hours: 8, week: "Week 13" },
+      { id: "SEC-07", name: "Security configuration review and hardening", desc: "IIS security, server headers, CSP, directory browsing, CORS", cat: "Security", assignee: "Team Lead", priority: "Medium", hours: 8, week: "Week 14" }
+    ]
+  },
+  {
+    id: "EP-15", name: "QA & Testing", phase: "Phase-6", weeks: "Week 3-15", hours: 280,
+    tasks: [
+      { id: "QA-01", name: "Create test plan and test strategy document", desc: "Test scope, types, criteria, environment, risk assessment, schedule", cat: "QA", assignee: "Senior QA", priority: "Highest", hours: 16, week: "Week 3" },
+      { id: "QA-02", name: "Write test cases for Authentication module", desc: "Login/logout, password, role, permissions, session. Min 50 cases", cat: "QA", assignee: "Senior QA", priority: "High", hours: 12, week: "Week 4" },
+      { id: "QA-03", name: "Write test cases for Data Synchronization", desc: "CBS/EJ/NEPS import, sync, errors, validation. Min 60 cases", cat: "QA", assignee: "Senior QA", priority: "High", hours: 12, week: "Week 7" },
+      { id: "QA-04", name: "Write test cases for Reconciliation Engine", desc: "Match, mismatch, auto/manual recon, GL, batch. Min 80 cases", cat: "QA", assignee: "Senior QA", priority: "Highest", hours: 16, week: "Week 9" },
+      { id: "QA-05", name: "Write test cases for Dispute Management", desc: "Creation, workflow, manual entry, status, docs, audit. Min 40 cases", cat: "QA", assignee: "Senior QA", priority: "High", hours: 10, week: "Week 10" },
+      { id: "QA-06", name: "Write test cases for Reports and Dashboard", desc: "All 5 report types, filters, exports, dashboard accuracy. Min 50 cases", cat: "QA", assignee: "Senior QA", priority: "High", hours: 10, week: "Week 11" },
+      { id: "QA-07", name: "Write test cases for Refill and Response Code", desc: "Refill recording, Last/First Trace, response code logic. Min 30 cases", cat: "QA", assignee: "Senior QA", priority: "Medium", hours: 8, week: "Week 9" },
+      { id: "QA-08", name: "Execute functional testing - Sprint 1", desc: "Test infrastructure, auth, menu, base CRUD. Log defects", cat: "Testing", assignee: "Senior QA", priority: "High", hours: 24, week: "Week 5-6" },
+      { id: "QA-09", name: "Execute functional testing - Sprint 2", desc: "Test data sync, reconciliation core, refill. Log defects", cat: "Testing", assignee: "Senior QA", priority: "High", hours: 24, week: "Week 9-10" },
+      { id: "QA-10", name: "Execute functional testing - Sprint 3", desc: "Test disputes, response codes, reports, dashboard, audit. Log defects", cat: "Testing", assignee: "Senior QA", priority: "High", hours: 24, week: "Week 12-13" },
+      { id: "QA-11", name: "Regression testing after bug fixes", desc: "Full regression suite, verify no regressions", cat: "Testing", assignee: "Senior QA", priority: "High", hours: 20, week: "Week 13-14" },
+      { id: "QA-12", name: "Performance testing", desc: "100K+ transactions, 50+ concurrent users, report gen, sync throughput", cat: "Testing", assignee: "Senior QA", priority: "High", hours: 16, week: "Week 14" },
+      { id: "QA-13", name: "Write unit tests for backend services", desc: "Reconciliation, validation, dispute, response code. xUnit 70%+ coverage", cat: "Testing", assignee: "Senior Developer", priority: "High", hours: 24, week: "Week 11-13" },
+      { id: "QA-14", name: "Write integration tests for API endpoints", desc: "All API endpoints: auth, CRUD, reconciliation, sync. WebApplicationFactory", cat: "Testing", assignee: "Backend Developer", priority: "High", hours: 20, week: "Week 12-13" }
+    ]
+  },
+  {
+    id: "EP-16", name: "Security Testing", phase: "Phase-7", weeks: "Week 14-15", hours: 68,
+    tasks: [
+      { id: "SECT-01", name: "OWASP Top 10 vulnerability assessment", desc: "Injection, broken auth, data exposure, XXE, access control, XSS", cat: "Security", assignee: "Team Lead", priority: "Highest", hours: 16, week: "Week 14" },
+      { id: "SECT-02", name: "Automated vulnerability scanning", desc: "OWASP ZAP scanning, findings analysis, severity categorization", cat: "Security", assignee: "Team Lead", priority: "Highest", hours: 12, week: "Week 14" },
+      { id: "SECT-03", name: "Penetration testing", desc: "Auth bypass, privilege escalation, SQL injection, XSS, CSRF, API abuse", cat: "Security", assignee: "Team Lead", priority: "Highest", hours: 16, week: "Week 14-15" },
+      { id: "SECT-04", name: "Security audit report preparation", desc: "Findings summary, risk ratings, remediation actions, compliance status", cat: "Security", assignee: "Team Lead", priority: "High", hours: 8, week: "Week 15" },
+      { id: "SECT-05", name: "Security remediation", desc: "Fix Critical/High findings, re-test, document improvements", cat: "Security", assignee: "Senior Developer", priority: "Highest", hours: 16, week: "Week 15" }
+    ]
+  },
+  {
+    id: "EP-17", name: "UAT & Training", phase: "Phase-7", weeks: "Week 15-17", hours: 94,
+    tasks: [
+      { id: "UAT-01", name: "Prepare UAT environment and test data", desc: "UAT environment mirroring production, realistic test data, user accounts", cat: "UAT", assignee: "Team Lead", priority: "Highest", hours: 12, week: "Week 15" },
+      { id: "UAT-02", name: "Create UAT test scenarios document", desc: "Business-language test scenarios: end-to-end workflows for all roles", cat: "UAT", assignee: "Senior QA", priority: "High", hours: 10, week: "Week 15" },
+      { id: "UAT-03", name: "Conduct UAT with bank stakeholders", desc: "Facilitate UAT sessions, demonstrate, collect feedback, track sign-off", cat: "UAT", assignee: "Team Lead", priority: "Highest", hours: 24, week: "Week 16" },
+      { id: "UAT-04", name: "UAT defect resolution", desc: "Fix UAT defects, re-test with bank users, obtain sign-off", cat: "UAT", assignee: "Senior Developer", priority: "Highest", hours: 20, week: "Week 16-17" },
+      { id: "UAT-05", name: "Prepare user training materials", desc: "User manual (PDF), role-specific guides, video tutorials, FAQ", cat: "Documentation", assignee: "Team Lead", priority: "High", hours: 16, week: "Week 15-16" },
+      { id: "UAT-06", name: "Conduct user training sessions", desc: "Training for each role with hands-on exercises", cat: "UAT", assignee: "Team Lead", priority: "High", hours: 12, week: "Week 17" }
+    ]
+  },
+  {
+    id: "EP-18", name: "Deployment & Go-Live", phase: "Phase-8", weeks: "Week 13-18", hours: 84,
+    tasks: [
+      { id: "DEP-01", name: "Prepare staging environment", desc: "IIS, SQL Server, network, SSL, firewall, deploy for pre-prod testing", cat: "DevOps", assignee: "Team Lead", priority: "Highest", hours: 12, week: "Week 13" },
+      { id: "DEP-02", name: "Staging deployment and smoke testing", desc: "Deploy to staging, smoke tests, verify sync, test with volume", cat: "DevOps", assignee: "Team Lead", priority: "Highest", hours: 8, week: "Week 14" },
+      { id: "DEP-03", name: "Prepare production environment", desc: "Production server: IIS, SQL TDE, SSL, backups, monitoring, hardening", cat: "DevOps", assignee: "Team Lead", priority: "Highest", hours: 12, week: "Week 17" },
+      { id: "DEP-04", name: "Production deployment", desc: "DB migration, app deployment via CI/CD, config verification, DNS", cat: "DevOps", assignee: "Team Lead", priority: "Highest", hours: 8, week: "Week 17" },
+      { id: "DEP-05", name: "Post-deployment verification", desc: "Verify all modules in production, monitor 48 hours", cat: "DevOps", assignee: "Team Lead", priority: "Highest", hours: 12, week: "Week 17-18" },
+      { id: "DEP-06", name: "Setup monitoring and alerting", desc: "Serilog + Elmah, health checks, Hangfire dashboard, alerts", cat: "DevOps", assignee: "Team Lead", priority: "High", hours: 8, week: "Week 17" },
+      { id: "DEP-07", name: "Prepare system documentation", desc: "Architecture, DB schema, API docs, deployment guide, runbook", cat: "Documentation", assignee: "Senior Developer", priority: "High", hours: 16, week: "Week 16-17" },
+      { id: "DEP-08", name: "Post-go-live support plan", desc: "SLAs, escalation matrix, on-call, bug fix process, handover", cat: "Documentation", assignee: "Team Lead", priority: "High", hours: 8, week: "Week 18" }
+    ]
+  }
+];
+
+const CAT_CLASSES = {
+  "R&D": "cat-rd", "Database": "cat-db", "Backend": "cat-be", "Frontend": "cat-fe",
+  "QA": "cat-qa", "Testing": "cat-qa", "Security": "cat-sec", "Infrastructure": "cat-infra",
+  "DevOps": "cat-infra", "Documentation": "cat-infra", "UAT": "cat-uat"
+};
+const PRIORITY_CLASSES = { "Highest": "badge-highest", "High": "badge-high", "Medium": "badge-medium", "Low": "badge-low" };
+
+function renderEpics(data) {
+  const container = document.getElementById('epicsContainer');
+  container.innerHTML = data.map((epic, i) => `
+    <div class="epic-section" data-epic="${i}">
+      <div class="epic-header" onclick="toggleEpic(${i})">
+        <h3><span class="arrow" id="arrow-${i}">&#9654;</span> ${epic.id}: ${epic.name}</h3>
+        <div class="meta">
+          <span class="phase-tag">${epic.phase}</span>
+          <span>${epic.weeks}</span>
+          <span><strong>${epic.tasks.length}</strong> tasks</span>
+          <span><strong>${epic.hours}h</strong> total</span>
+        </div>
+      </div>
+      <div class="epic-body" id="body-${i}">
+        <table>
+          <thead><tr><th>ID</th><th>Task</th><th>Category</th><th>Assignee</th><th>Priority</th><th>Hours</th><th>Week</th></tr></thead>
+          <tbody>
+            ${epic.tasks.map(t => `<tr class="task-row" data-search="${(t.id + ' ' + t.name + ' ' + t.desc + ' ' + t.cat + ' ' + t.assignee + ' ' + t.priority).toLowerCase()}">
+              <td><strong>${t.id}</strong></td>
+              <td><div style="font-weight:500">${t.name}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">${t.desc}</div></td>
+              <td><span class="cat-badge ${CAT_CLASSES[t.cat] || ''}">${t.cat}</span></td>
+              <td style="font-size:12px">${t.assignee}</td>
+              <td><span class="badge ${PRIORITY_CLASSES[t.priority]}">${t.priority}</span></td>
+              <td><strong>${t.hours}h</strong></td>
+              <td style="font-size:12px;white-space:nowrap">${t.week}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleEpic(i) {
+  const body = document.getElementById(`body-${i}`);
+  const arrow = document.getElementById(`arrow-${i}`);
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+}
+
+function filterTasks() {
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  const cat = document.getElementById('filterCategory').value;
+  const assignee = document.getElementById('filterAssignee').value;
+  const priority = document.getElementById('filterPriority').value;
+
+  EPICS.forEach((epic, i) => {
+    const section = document.querySelector(`[data-epic="${i}"]`);
+    let visibleCount = 0;
+    const rows = section.querySelectorAll('.task-row');
+    rows.forEach(row => {
+      const searchText = row.dataset.search;
+      const matchSearch = !q || searchText.includes(q);
+      const matchCat = !cat || epic.tasks.find(t => row.querySelector('strong').textContent === t.id)?.cat === cat;
+      const matchAssignee = !assignee || searchText.includes(assignee.toLowerCase());
+      const matchPriority = !priority || searchText.includes(priority.toLowerCase());
+      const visible = matchSearch && matchCat && matchAssignee && matchPriority;
+      row.style.display = visible ? '' : 'none';
+      if (visible) visibleCount++;
+    });
+    section.style.display = visibleCount > 0 ? '' : 'none';
+  });
+}
+
+function renderTimeline() {
+  const totalWeeks = 18;
+  const colors = ['#3b82f6','#8b5cf6','#06b6d4','#22c55e','#eab308','#f97316','#ef4444','#ec4899','#14b8a6','#6366f1','#f43f5e','#84cc16','#0ea5e9','#a855f7','#10b981','#f59e0b','#e11d48','#7c3aed'];
+  const phases = [
+    { name: "EP-01: R&D & Requirements", start: 1, end: 2 },
+    { name: "EP-02: Infrastructure Setup", start: 2, end: 3 },
+    { name: "EP-03: Database Design", start: 2, end: 4 },
+    { name: "EP-04: Auth & RBAC", start: 3, end: 5 },
+    { name: "EP-05: Menu Management", start: 4, end: 5 },
+    { name: "EP-06: Data Synchronization", start: 5, end: 8 },
+    { name: "EP-07: Reconciliation Engine", start: 7, end: 10 },
+    { name: "EP-08: ATM Refill Handling", start: 8, end: 10 },
+    { name: "EP-09: Dispute Management", start: 9, end: 11 },
+    { name: "EP-10: Response Code Handling", start: 8, end: 9 },
+    { name: "EP-11: Reporting & Dashboard", start: 10, end: 13 },
+    { name: "EP-12: Audit & Compliance", start: 10, end: 12 },
+    { name: "EP-13: Data Backup & Retention", start: 11, end: 12 },
+    { name: "EP-14: Security Hardening", start: 12, end: 14 },
+    { name: "EP-15: QA & Testing", start: 3, end: 15 },
+    { name: "EP-16: Security Testing", start: 14, end: 15 },
+    { name: "EP-17: UAT & Training", start: 15, end: 17 },
+    { name: "EP-18: Deployment & Go-Live", start: 13, end: 18 }
+  ];
+
+  let html = '<div class="timeline-weeks">';
+  for (let w = 1; w <= totalWeeks; w++) html += `<div class="timeline-week">W${w}</div>`;
+  html += '</div>';
+
+  phases.forEach((p, i) => {
+    const left = ((p.start - 1) / totalWeeks * 100).toFixed(1);
+    const width = ((p.end - p.start + 1) / totalWeeks * 100).toFixed(1);
+    html += `<div class="timeline-row">
+      <div class="timeline-label">${p.name}</div>
+      <div class="timeline-bar-container">
+        <div class="timeline-bar" style="left:${left}%;width:${width}%;background:${colors[i % colors.length]}">W${p.start}-${p.end}</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('timelineChart').innerHTML = html;
+}
+
+function renderTeam() {
+  const team = [
+    { name: "Team Lead", role: "DevOps, Manager, Full Stack, Domain Expert", tasks: "Infrastructure setup, CI/CD, Security testing, UAT coordination, Deployment, Documentation, Client communication", hours: 308 },
+    { name: "Senior Developer (Full Stack)", role: "Architecture, Core modules, Backend + Frontend", tasks: "Auth system, Data sync services (CBS/EJ), Reconciliation engine, Matching algorithm, Dispute workflow, Audit logging, Security hardening, Unit tests", hours: 440 },
+    { name: "Frontend Developer (Mid Level)", role: "UI/UX Implementation, Razor Views", tasks: "All UI pages: Auth, Menu, Sync dashboard, Reconciliation views, Dispute UI, Reports, Dashboard, Audit viewer, Backup monitor", hours: 336 },
+    { name: "Backend Developer (Mid Level)", role: "API Development, Database", tasks: "User/Role APIs, Menu APIs, NEPS import, Hangfire jobs, Reconciliation APIs, Dispute APIs, Report APIs, Integration tests", hours: 368 },
+    { name: "Senior QA", role: "Test Strategy, Execution, UAT Support", tasks: "Test plan, 360+ test cases, Functional testing (3 sprints), Regression testing, Performance testing, UAT scenarios", hours: 280 },
+    { name: "Consultant (3 weeks)", role: "Domain Expert, System Analysis", tasks: "CBS/EJ/NEPS system study, Response code mapping, Business rules definition, Reporting requirements, Knowledge transfer", hours: 68 }
+  ];
+
+  document.getElementById('teamGrid').innerHTML = team.map(t => `
+    <div class="team-card">
+      <h4>${t.name}</h4>
+      <div class="role">${t.role}</div>
+      <div class="hours">${t.hours}h</div>
+      <div class="hours-label">Estimated Total Hours</div>
+      <div class="task-list"><strong>Key Responsibilities:</strong><br>${t.tasks}</div>
+    </div>
+  `).join('');
+}
+
+function renderPhaseSummary() {
+  const phases = [
+    { name: "Phase 0: R&D & Requirement Analysis", weeks: "Week 1-2", epics: "EP-01", hours: 108, desc: "System study (CBS/EJ/NEPS), business rules definition, architecture design, response code mapping, sync strategy" },
+    { name: "Phase 1: Infrastructure & Database", weeks: "Week 2-4", epics: "EP-02, EP-03", hours: 190, desc: "Solution scaffolding, Git setup, CI/CD, NuGet/npm config, database schema design (15 table groups), stored procedures, EF Core setup" },
+    { name: "Phase 2: Auth, Roles & Menu", weeks: "Week 3-5", epics: "EP-04, EP-05", hours: 142, desc: "JWT + Cookie auth, user/role CRUD, permission system, login UI, menu management, dynamic menu rendering" },
+    { name: "Phase 3: Core Engine Development", weeks: "Week 5-10", epics: "EP-06, EP-07", hours: 304, desc: "CBS/EJ/NEPS data import services, Hangfire scheduling, validation engine, transaction matching algorithm, batch processing, mismatch detection, GL calculation" },
+    { name: "Phase 4: Feature Modules", weeks: "Week 8-11", epics: "EP-08, EP-09, EP-10", hours: 156, desc: "ATM refill handling (Last/First Trace), dispute management with approval workflow, response code configuration" },
+    { name: "Phase 5: Reports, Audit & Backup", weeks: "Week 10-13", epics: "EP-11, EP-12, EP-13", hours: 220, desc: "5 report types + dashboard, activity logging, data change tracking, tamper-proof logs, EJ archival, backup scheduling" },
+    { name: "Phase 6: Security & QA", weeks: "Week 3-15", epics: "EP-14, EP-15", hours: 340, desc: "Encryption (rest + transit), session/password policies, input validation, rate limiting, test plan, 360+ test cases, 3 sprint testing cycles, regression, performance" },
+    { name: "Phase 7: Security Testing & UAT", weeks: "Week 14-17", epics: "EP-16, EP-17", hours: 162, desc: "OWASP assessment, vulnerability scanning, penetration testing, remediation, UAT with bank, defect resolution, training materials, user training" },
+    { name: "Phase 8: Deployment & Go-Live", weeks: "Week 13-18", epics: "EP-18", hours: 84, desc: "Staging setup + smoke test, production deployment, monitoring, documentation, post-go-live support plan" }
+  ];
+
+  document.getElementById('phaseSummary').innerHTML = phases.map(p => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h3 style="font-size:15px;">${p.name}</h3>
+        <div style="display:flex;gap:16px;font-size:12px;color:var(--text-muted);">
+          <span class="phase-tag">${p.weeks}</span>
+          <span>Epics: ${p.epics}</span>
+          <span><strong style="color:var(--green)">${p.hours}h</strong></span>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);">${p.desc}</p>
+    </div>
+  `).join('');
+}
+
+renderEpics(EPICS);
+renderTimeline();
+renderTeam();
+renderPhaseSummary();
+</script>
+</body>
+</html>
